@@ -15,18 +15,18 @@ export class ReportsService {
       title,
       status: 'in_progress',
     });
-    await this.generateExcelReport(report);
+    await this.generateExcelReport(report, title);
     return report.id;
   }
 
-  async generateExcelReport(report: Report) {
+  async generateExcelReport(report: Report, title: string[]) {
     const response = await fetch(`http://localhost:4000${report.endpoint}`, {
       method: 'GET',
       headers: {
         ...report.dataValues.title.toString,
       },
     });
-    const data = await response.json();
+    const result = await response.json();
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(`${report.dataValues.customer}`);
     const headers = report.dataValues.title.map((title) => ({
@@ -34,6 +34,18 @@ export class ReportsService {
       key: title,
     }));
     worksheet.columns = headers;
+
+    const data = result.map((obj) => {
+      const newObject = {};
+      title.forEach((key) => {
+        if (obj.hasOwnProperty(key)) {
+          const valueKey = obj[key];
+          newObject[key] = valueKey;
+        }
+      });
+      return newObject;
+    });
+
     data.forEach((row) => {
       worksheet.addRow(row).commit();
     });
